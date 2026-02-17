@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Developer Product Delivery Evaluation</title>
+    <title>Developer Evaluation Scorecard</title>
     <script crossorigin src="https://cdnjs.cloudflare.com/ajax/libs/react/18.2.0/umd/react.production.min.js"></script>
     <script crossorigin src="https://cdnjs.cloudflare.com/ajax/libs/react-dom/18.2.0/umd/react-dom.production.min.js"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/babel-standalone/7.23.5/babel.min.js"></script>
@@ -16,7 +16,9 @@
         const { useState } = React;
         
         const DeveloperEvaluationScorer = () => {
-          const [criteria, setCriteria] = useState([
+          const [activeTab, setActiveTab] = useState('delivery');
+          
+          const [deliveryCriteria, setDeliveryCriteria] = useState([
             {
               id: 1,
               name: 'Effort Estimation Accuracy',
@@ -75,27 +77,67 @@
             }
           ]);
 
-          const updateWeight = (id, newWeight) => {
+          const [masteryCriteria, setMasteryCriteria] = useState([
+            {
+              id: 1,
+              name: 'Continuous Learning & Technology Currency',
+              description: 'Collaborates with supervisor to determine training time; stays current on technologies, methodologies, testing practices, architecture, and design patterns (minimum 1 hour/quarter)',
+              weight: 25,
+              score: 3,
+              comment: ''
+            },
+            {
+              id: 2,
+              name: 'Security & Compliance Knowledge',
+              description: 'Learns security policies, practices, and government regulations; responds to security tickets within required timeframes (minimum 1 hour/quarter)',
+              weight: 25,
+              score: 3,
+              comment: ''
+            },
+            {
+              id: 3,
+              name: 'Coding Standards Adherence',
+              description: 'Consistently follows established coding practices and standards',
+              weight: 20,
+              score: 3,
+              comment: ''
+            },
+            {
+              id: 4,
+              name: 'Infrastructure & Component Reuse',
+              description: 'Prioritizes NCBI infrastructure/components, then supported open-source software',
+              weight: 15,
+              score: 3,
+              comment: ''
+            },
+            {
+              id: 5,
+              name: 'UI/UX & Accessibility Compliance',
+              description: 'Ensures interfaces comply with NCBI standards; achieves 80%+ accessibility rating in yearly evaluation',
+              weight: 15,
+              score: 3,
+              comment: ''
+            }
+          ]);
+
+          const updateCriteria = (tab, id, field, value) => {
+            const setCriteria = tab === 'delivery' ? setDeliveryCriteria : setMasteryCriteria;
+            const criteria = tab === 'delivery' ? deliveryCriteria : masteryCriteria;
+            
             setCriteria(criteria.map(c => 
-              c.id === id ? { ...c, weight: parseInt(newWeight) } : c
+              c.id === id ? { ...c, [field]: field === 'comment' ? value : parseInt(value) } : c
             ));
           };
 
-          const updateScore = (id, newScore) => {
-            setCriteria(criteria.map(c => 
-              c.id === id ? { ...c, score: parseInt(newScore) } : c
-            ));
+          const calculateMetrics = (criteria) => {
+            const totalWeight = criteria.reduce((sum, c) => sum + c.weight, 0);
+            const weightedScore = criteria.reduce((sum, c) => sum + (c.score * c.weight), 0);
+            const averageScore = totalWeight > 0 ? (weightedScore / totalWeight).toFixed(2) : 0;
+            return { totalWeight, weightedScore, averageScore };
           };
 
-          const updateComment = (id, newComment) => {
-            setCriteria(criteria.map(c => 
-              c.id === id ? { ...c, comment: newComment } : c
-            ));
-          };
-
-          const totalWeight = criteria.reduce((sum, c) => sum + c.weight, 0);
-          const weightedScore = criteria.reduce((sum, c) => sum + (c.score * c.weight), 0);
-          const averageScore = totalWeight > 0 ? (weightedScore / totalWeight).toFixed(2) : 0;
+          const deliveryMetrics = calculateMetrics(deliveryCriteria);
+          const masteryMetrics = calculateMetrics(masteryCriteria);
 
           const getScoreColor = (score) => {
             if (score >= 4) return 'text-green-600';
@@ -115,15 +157,28 @@
           const exportData = () => {
             const data = {
               evaluationDate: new Date().toISOString(),
-              overallScore: averageScore,
-              performanceLevel: getPerformanceLabel(parseFloat(averageScore)),
-              criteria: criteria.map(c => ({
-                name: c.name,
-                weight: c.weight,
-                score: c.score,
-                comment: c.comment,
-                weightedContribution: ((c.score * c.weight) / totalWeight * 5).toFixed(2)
-              }))
+              productDelivery: {
+                overallScore: deliveryMetrics.averageScore,
+                performanceLevel: getPerformanceLabel(parseFloat(deliveryMetrics.averageScore)),
+                criteria: deliveryCriteria.map(c => ({
+                  name: c.name,
+                  weight: c.weight,
+                  score: c.score,
+                  comment: c.comment,
+                  weightedContribution: ((c.score * c.weight) / deliveryMetrics.totalWeight * 5).toFixed(2)
+                }))
+              },
+              technicalMastery: {
+                overallScore: masteryMetrics.averageScore,
+                performanceLevel: getPerformanceLabel(parseFloat(masteryMetrics.averageScore)),
+                criteria: masteryCriteria.map(c => ({
+                  name: c.name,
+                  weight: c.weight,
+                  score: c.score,
+                  comment: c.comment,
+                  weightedContribution: ((c.score * c.weight) / masteryMetrics.totalWeight * 5).toFixed(2)
+                }))
+              }
             };
             
             const blob = new Blob([JSON.stringify(data, null, 2)], { type: 'application/json' });
@@ -138,12 +193,95 @@
             window.print();
           };
 
+          const renderCriteriaCards = (criteria, tab) => {
+            const metrics = tab === 'delivery' ? deliveryMetrics : masteryMetrics;
+            
+            return criteria.map((criterion) => (
+              <div key={criterion.id} className="bg-white rounded-lg shadow p-5">
+                <div className="mb-4">
+                  <h3 className="font-semibold text-gray-800 mb-1">{criterion.name}</h3>
+                  <p className="text-sm text-gray-600">{criterion.description}</p>
+                </div>
+
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                  <div>
+                    <div className="flex justify-between items-center mb-2">
+                      <label className="text-sm font-medium text-gray-700">Weight</label>
+                      <span className="text-sm font-bold text-blue-600">{criterion.weight}%</span>
+                    </div>
+                    <input
+                      type="range"
+                      min="0"
+                      max="50"
+                      value={criterion.weight}
+                      onChange={(e) => updateCriteria(tab, criterion.id, 'weight', e.target.value)}
+                      className="w-full h-2 bg-gray-200 rounded-lg appearance-none cursor-pointer accent-blue-600"
+                    />
+                    <div className="flex justify-between text-xs text-gray-500 mt-1">
+                      <span>0%</span>
+                      <span>50%</span>
+                    </div>
+                  </div>
+
+                  <div>
+                    <div className="flex justify-between items-center mb-2">
+                      <label className="text-sm font-medium text-gray-700">Score</label>
+                      <span className={`text-sm font-bold ${getScoreColor(criterion.score)}`}>
+                        {criterion.score} / 5
+                      </span>
+                    </div>
+                    <input
+                      type="range"
+                      min="1"
+                      max="5"
+                      value={criterion.score}
+                      onChange={(e) => updateCriteria(tab, criterion.id, 'score', e.target.value)}
+                      className="w-full h-2 bg-gray-200 rounded-lg appearance-none cursor-pointer accent-green-600"
+                    />
+                    <div className="flex justify-between text-xs text-gray-500 mt-1">
+                      <span>1 (Poor)</span>
+                      <span>3 (Meets)</span>
+                      <span>5 (Excellent)</span>
+                    </div>
+                  </div>
+                </div>
+
+                <div className="mt-3 pt-3 border-t border-gray-200">
+                  <div className="flex justify-between text-sm mb-3">
+                    <span className="text-gray-600">Weighted Contribution:</span>
+                    <span className="font-semibold text-gray-800">
+                      {((criterion.score * criterion.weight) / metrics.totalWeight * 5).toFixed(2)} points
+                    </span>
+                  </div>
+                  
+                  <div>
+                    <label className="text-sm font-medium text-gray-700 block mb-2">
+                      Evaluation Comments
+                    </label>
+                    <textarea
+                      value={criterion.comment}
+                      onChange={(e) => updateCriteria(tab, criterion.id, 'comment', e.target.value)}
+                      placeholder="Add specific examples, feedback, or notes about this criterion..."
+                      className="w-full px-3 py-2 text-sm border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent resize-none"
+                      rows="3"
+                    />
+                    {criterion.comment && (
+                      <p className="text-xs text-gray-500 mt-1">
+                        {criterion.comment.length} characters
+                      </p>
+                    )}
+                  </div>
+                </div>
+              </div>
+            ));
+          };
+
           return (
             <div className="max-w-6xl mx-auto p-6 bg-gray-50">
               <div className="bg-white rounded-lg shadow-lg p-6 mb-6">
                 <div className="flex justify-between items-start mb-4">
                   <div>
-                    <h1 className="text-2xl font-bold text-gray-800 mb-2">Developer Product Delivery Evaluation</h1>
+                    <h1 className="text-2xl font-bold text-gray-800 mb-2">Developer Performance Evaluation</h1>
                     <p className="text-sm text-gray-600">NLM Strategic Goal #1 – Accelerate discovery and advance health by providing tools for data-driven research</p>
                   </div>
                   <div className="flex gap-2 print:hidden">
@@ -161,119 +299,95 @@
                     </button>
                   </div>
                 </div>
-                
-                <div className="bg-blue-50 border-l-4 border-blue-500 p-4 mb-6">
+
+                {/* Tabs */}
+                <div className="border-b border-gray-200 mb-6 print:hidden">
+                  <nav className="flex -mb-px">
+                    <button
+                      onClick={() => setActiveTab('delivery')}
+                      className={`py-3 px-6 text-sm font-medium border-b-2 transition-colors ${
+                        activeTab === 'delivery'
+                          ? 'border-blue-500 text-blue-600'
+                          : 'border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300'
+                      }`}
+                    >
+                      Product Delivery
+                    </button>
+                    <button
+                      onClick={() => setActiveTab('mastery')}
+                      className={`py-3 px-6 text-sm font-medium border-b-2 transition-colors ${
+                        activeTab === 'mastery'
+                          ? 'border-blue-500 text-blue-600'
+                          : 'border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300'
+                      }`}
+                    >
+                      Technical Mastery
+                    </button>
+                  </nav>
+                </div>
+
+                {/* Overall Scores Summary */}
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-6">
+                  <div className={`bg-gradient-to-br from-blue-50 to-blue-100 border-l-4 border-blue-500 p-4 rounded-lg ${activeTab === 'delivery' ? 'ring-2 ring-blue-500' : ''}`}>
+                    <p className="text-xs text-gray-600 mb-1">Product Delivery Score</p>
+                    <p className={`text-3xl font-bold ${getScoreColor(parseFloat(deliveryMetrics.averageScore))}`}>
+                      {deliveryMetrics.averageScore} / 5.0
+                    </p>
+                    <p className="text-xs font-medium text-gray-700 mt-1">
+                      {getPerformanceLabel(parseFloat(deliveryMetrics.averageScore))}
+                    </p>
+                  </div>
+                  <div className={`bg-gradient-to-br from-purple-50 to-purple-100 border-l-4 border-purple-500 p-4 rounded-lg ${activeTab === 'mastery' ? 'ring-2 ring-purple-500' : ''}`}>
+                    <p className="text-xs text-gray-600 mb-1">Technical Mastery Score</p>
+                    <p className={`text-3xl font-bold ${getScoreColor(parseFloat(masteryMetrics.averageScore))}`}>
+                      {masteryMetrics.averageScore} / 5.0
+                    </p>
+                    <p className="text-xs font-medium text-gray-700 mt-1">
+                      {getPerformanceLabel(parseFloat(masteryMetrics.averageScore))}
+                    </p>
+                  </div>
+                </div>
+
+                {/* Active Tab Header */}
+                <div className="bg-blue-50 border-l-4 border-blue-500 p-4">
                   <div className="flex items-center justify-between">
                     <div>
-                      <p className="text-sm text-gray-600 mb-1">Overall Performance Score</p>
-                      <p className={`text-4xl font-bold ${getScoreColor(parseFloat(averageScore))}`}>
-                        {averageScore} / 5.0
+                      <p className="text-sm text-gray-600 mb-1">
+                        {activeTab === 'delivery' ? 'Product Delivery' : 'Technical Mastery'} Performance Score
+                      </p>
+                      <p className={`text-4xl font-bold ${getScoreColor(parseFloat(activeTab === 'delivery' ? deliveryMetrics.averageScore : masteryMetrics.averageScore))}`}>
+                        {activeTab === 'delivery' ? deliveryMetrics.averageScore : masteryMetrics.averageScore} / 5.0
                       </p>
                       <p className="text-sm font-medium text-gray-700 mt-1">
-                        {getPerformanceLabel(parseFloat(averageScore))}
+                        {getPerformanceLabel(parseFloat(activeTab === 'delivery' ? deliveryMetrics.averageScore : masteryMetrics.averageScore))}
                       </p>
                     </div>
                     <div className="text-right">
                       <p className="text-sm text-gray-600">Total Weight</p>
-                      <p className={`text-2xl font-bold ${totalWeight === 100 ? 'text-green-600' : 'text-orange-600'}`}>
-                        {totalWeight}%
+                      <p className={`text-2xl font-bold ${
+                        (activeTab === 'delivery' ? deliveryMetrics.totalWeight : masteryMetrics.totalWeight) === 100 
+                          ? 'text-green-600' 
+                          : 'text-orange-600'
+                      }`}>
+                        {activeTab === 'delivery' ? deliveryMetrics.totalWeight : masteryMetrics.totalWeight}%
                       </p>
-                      {totalWeight !== 100 && (
+                      {(activeTab === 'delivery' ? deliveryMetrics.totalWeight : masteryMetrics.totalWeight) !== 100 && (
                         <p className="text-xs text-orange-600 mt-1">Should total 100%</p>
                       )}
                     </div>
                   </div>
                 </div>
-
-                <div className="mb-4 flex items-center gap-2 text-sm text-gray-600 print:hidden">
-                  <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 6V4m0 2a2 2 0 100 4m0-4a2 2 0 110 4m-6 8a2 2 0 100-4m0 4a2 2 0 110-4m0 4v2m0-6V4m6 6v10m6-2a2 2 0 100-4m0 4a2 2 0 110-4m0 4v2m0-6V4" />
-                  </svg>
-                  <span>Adjust weights and scores for each criterion below</span>
-                </div>
               </div>
 
+              {/* Criteria Cards */}
               <div className="space-y-4">
-                {criteria.map((criterion) => (
-                  <div key={criterion.id} className="bg-white rounded-lg shadow p-5">
-                    <div className="mb-4">
-                      <h3 className="font-semibold text-gray-800 mb-1">{criterion.name}</h3>
-                      <p className="text-sm text-gray-600">{criterion.description}</p>
-                    </div>
-
-                    <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                      <div>
-                        <div className="flex justify-between items-center mb-2">
-                          <label className="text-sm font-medium text-gray-700">Weight</label>
-                          <span className="text-sm font-bold text-blue-600">{criterion.weight}%</span>
-                        </div>
-                        <input
-                          type="range"
-                          min="0"
-                          max="50"
-                          value={criterion.weight}
-                          onChange={(e) => updateWeight(criterion.id, e.target.value)}
-                          className="w-full h-2 bg-gray-200 rounded-lg appearance-none cursor-pointer accent-blue-600"
-                        />
-                        <div className="flex justify-between text-xs text-gray-500 mt-1">
-                          <span>0%</span>
-                          <span>50%</span>
-                        </div>
-                      </div>
-
-                      <div>
-                        <div className="flex justify-between items-center mb-2">
-                          <label className="text-sm font-medium text-gray-700">Score</label>
-                          <span className={`text-sm font-bold ${getScoreColor(criterion.score)}`}>
-                            {criterion.score} / 5
-                          </span>
-                        </div>
-                        <input
-                          type="range"
-                          min="1"
-                          max="5"
-                          value={criterion.score}
-                          onChange={(e) => updateScore(criterion.id, e.target.value)}
-                          className="w-full h-2 bg-gray-200 rounded-lg appearance-none cursor-pointer accent-green-600"
-                        />
-                        <div className="flex justify-between text-xs text-gray-500 mt-1">
-                          <span>1 (Poor)</span>
-                          <span>3 (Meets)</span>
-                          <span>5 (Excellent)</span>
-                        </div>
-                      </div>
-                    </div>
-
-                    <div className="mt-3 pt-3 border-t border-gray-200">
-                      <div className="flex justify-between text-sm mb-3">
-                        <span className="text-gray-600">Weighted Contribution:</span>
-                        <span className="font-semibold text-gray-800">
-                          {((criterion.score * criterion.weight) / totalWeight * 5).toFixed(2)} points
-                        </span>
-                      </div>
-                      
-                      <div>
-                        <label className="text-sm font-medium text-gray-700 block mb-2">
-                          Evaluation Comments
-                        </label>
-                        <textarea
-                          value={criterion.comment}
-                          onChange={(e) => updateComment(criterion.id, e.target.value)}
-                          placeholder="Add specific examples, feedback, or notes about this criterion..."
-                          className="w-full px-3 py-2 text-sm border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent resize-none"
-                          rows="3"
-                        />
-                        {criterion.comment && (
-                          <p className="text-xs text-gray-500 mt-1">
-                            {criterion.comment.length} characters
-                          </p>
-                        )}
-                      </div>
-                    </div>
-                  </div>
-                ))}
+                {activeTab === 'delivery' 
+                  ? renderCriteriaCards(deliveryCriteria, 'delivery')
+                  : renderCriteriaCards(masteryCriteria, 'mastery')
+                }
               </div>
 
+              {/* Scoring Guide */}
               <div className="mt-6 bg-white rounded-lg shadow p-6">
                 <h3 className="font-semibold text-gray-800 mb-3">Scoring Guide</h3>
                 <div className="grid grid-cols-1 md:grid-cols-5 gap-3 text-sm">
@@ -312,6 +426,7 @@
             .print\:hidden { display: none !important; }
             input[type="range"] { pointer-events: none; }
             textarea { border: 1px solid #d1d5db; }
+            .space-y-4 > * { page-break-inside: avoid; }
         }
     </style>
 </body>

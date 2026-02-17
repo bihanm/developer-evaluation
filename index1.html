@@ -1,0 +1,318 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Developer Product Delivery Evaluation</title>
+    <script crossorigin src="https://cdnjs.cloudflare.com/ajax/libs/react/18.2.0/umd/react.production.min.js"></script>
+    <script crossorigin src="https://cdnjs.cloudflare.com/ajax/libs/react-dom/18.2.0/umd/react-dom.production.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/babel-standalone/7.23.5/babel.min.js"></script>
+    <script src="https://cdn.tailwindcss.com"></script>
+</head>
+<body>
+    <div id="root"></div>
+    
+    <script type="text/babel">
+        const { useState } = React;
+        
+        const DeveloperEvaluationScorer = () => {
+          const [criteria, setCriteria] = useState([
+            {
+              id: 1,
+              name: 'Effort Estimation Accuracy',
+              description: 'Provides accurate effort estimates for assigned tasks',
+              weight: 15,
+              score: 3,
+              comment: ''
+            },
+            {
+              id: 2,
+              name: 'On-Time Delivery & Quality',
+              description: 'Completes assigned tasks by due date according to acceptance criteria',
+              weight: 20,
+              score: 3,
+              comment: ''
+            },
+            {
+              id: 3,
+              name: 'Initiative & Collaboration',
+              description: 'Removes blockers independently and proactively assists others',
+              weight: 15,
+              score: 3,
+              comment: ''
+            },
+            {
+              id: 4,
+              name: 'Customer & Product Focus',
+              description: 'Focuses on customer needs and tasks prioritized by Product Owner',
+              weight: 15,
+              score: 3,
+              comment: ''
+            },
+            {
+              id: 5,
+              name: 'Problem Decomposition',
+              description: 'Analyzes large, ill-defined problems and breaks them into iterative steps',
+              weight: 15,
+              score: 3,
+              comment: ''
+            },
+            {
+              id: 6,
+              name: 'JIRA Compliance',
+              description: 'All code changes have associated JIRA tickets',
+              weight: 10,
+              score: 3,
+              comment: ''
+            },
+            {
+              id: 7,
+              name: 'Test Automation Coverage',
+              description: '50% of code change tickets include automated tests',
+              weight: 10,
+              score: 3,
+              comment: ''
+            }
+          ]);
+
+          const updateWeight = (id, newWeight) => {
+            setCriteria(criteria.map(c => 
+              c.id === id ? { ...c, weight: parseInt(newWeight) } : c
+            ));
+          };
+
+          const updateScore = (id, newScore) => {
+            setCriteria(criteria.map(c => 
+              c.id === id ? { ...c, score: parseInt(newScore) } : c
+            ));
+          };
+
+          const updateComment = (id, newComment) => {
+            setCriteria(criteria.map(c => 
+              c.id === id ? { ...c, comment: newComment } : c
+            ));
+          };
+
+          const totalWeight = criteria.reduce((sum, c) => sum + c.weight, 0);
+          const weightedScore = criteria.reduce((sum, c) => sum + (c.score * c.weight), 0);
+          const averageScore = totalWeight > 0 ? (weightedScore / totalWeight).toFixed(2) : 0;
+
+          const getScoreColor = (score) => {
+            if (score >= 4) return 'text-green-600';
+            if (score >= 3) return 'text-blue-600';
+            if (score >= 2) return 'text-yellow-600';
+            return 'text-red-600';
+          };
+
+          const getPerformanceLabel = (score) => {
+            if (score >= 4.5) return 'Outstanding';
+            if (score >= 3.5) return 'Exceeds Expectations';
+            if (score >= 2.5) return 'Meets Expectations';
+            if (score >= 1.5) return 'Needs Improvement';
+            return 'Unsatisfactory';
+          };
+
+          const exportData = () => {
+            const data = {
+              evaluationDate: new Date().toISOString(),
+              overallScore: averageScore,
+              performanceLevel: getPerformanceLabel(parseFloat(averageScore)),
+              criteria: criteria.map(c => ({
+                name: c.name,
+                weight: c.weight,
+                score: c.score,
+                comment: c.comment,
+                weightedContribution: ((c.score * c.weight) / totalWeight * 5).toFixed(2)
+              }))
+            };
+            
+            const blob = new Blob([JSON.stringify(data, null, 2)], { type: 'application/json' });
+            const url = URL.createObjectURL(blob);
+            const a = document.createElement('a');
+            a.href = url;
+            a.download = `evaluation-${new Date().toISOString().split('T')[0]}.json`;
+            a.click();
+          };
+
+          const printEvaluation = () => {
+            window.print();
+          };
+
+          return (
+            <div className="max-w-6xl mx-auto p-6 bg-gray-50">
+              <div className="bg-white rounded-lg shadow-lg p-6 mb-6">
+                <div className="flex justify-between items-start mb-4">
+                  <div>
+                    <h1 className="text-2xl font-bold text-gray-800 mb-2">Developer Product Delivery Evaluation</h1>
+                    <p className="text-sm text-gray-600">NLM Strategic Goal #1 – Accelerate discovery and advance health by providing tools for data-driven research</p>
+                  </div>
+                  <div className="flex gap-2 print:hidden">
+                    <button 
+                      onClick={printEvaluation}
+                      className="px-4 py-2 bg-gray-600 text-white rounded-lg text-sm hover:bg-gray-700 transition-colors"
+                    >
+                      Print
+                    </button>
+                    <button 
+                      onClick={exportData}
+                      className="px-4 py-2 bg-blue-600 text-white rounded-lg text-sm hover:bg-blue-700 transition-colors"
+                    >
+                      Export
+                    </button>
+                  </div>
+                </div>
+                
+                <div className="bg-blue-50 border-l-4 border-blue-500 p-4 mb-6">
+                  <div className="flex items-center justify-between">
+                    <div>
+                      <p className="text-sm text-gray-600 mb-1">Overall Performance Score</p>
+                      <p className={`text-4xl font-bold ${getScoreColor(parseFloat(averageScore))}`}>
+                        {averageScore} / 5.0
+                      </p>
+                      <p className="text-sm font-medium text-gray-700 mt-1">
+                        {getPerformanceLabel(parseFloat(averageScore))}
+                      </p>
+                    </div>
+                    <div className="text-right">
+                      <p className="text-sm text-gray-600">Total Weight</p>
+                      <p className={`text-2xl font-bold ${totalWeight === 100 ? 'text-green-600' : 'text-orange-600'}`}>
+                        {totalWeight}%
+                      </p>
+                      {totalWeight !== 100 && (
+                        <p className="text-xs text-orange-600 mt-1">Should total 100%</p>
+                      )}
+                    </div>
+                  </div>
+                </div>
+
+                <div className="mb-4 flex items-center gap-2 text-sm text-gray-600 print:hidden">
+                  <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 6V4m0 2a2 2 0 100 4m0-4a2 2 0 110 4m-6 8a2 2 0 100-4m0 4a2 2 0 110-4m0 4v2m0-6V4m6 6v10m6-2a2 2 0 100-4m0 4a2 2 0 110-4m0 4v2m0-6V4" />
+                  </svg>
+                  <span>Adjust weights and scores for each criterion below</span>
+                </div>
+              </div>
+
+              <div className="space-y-4">
+                {criteria.map((criterion) => (
+                  <div key={criterion.id} className="bg-white rounded-lg shadow p-5">
+                    <div className="mb-4">
+                      <h3 className="font-semibold text-gray-800 mb-1">{criterion.name}</h3>
+                      <p className="text-sm text-gray-600">{criterion.description}</p>
+                    </div>
+
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                      <div>
+                        <div className="flex justify-between items-center mb-2">
+                          <label className="text-sm font-medium text-gray-700">Weight</label>
+                          <span className="text-sm font-bold text-blue-600">{criterion.weight}%</span>
+                        </div>
+                        <input
+                          type="range"
+                          min="0"
+                          max="50"
+                          value={criterion.weight}
+                          onChange={(e) => updateWeight(criterion.id, e.target.value)}
+                          className="w-full h-2 bg-gray-200 rounded-lg appearance-none cursor-pointer accent-blue-600"
+                        />
+                        <div className="flex justify-between text-xs text-gray-500 mt-1">
+                          <span>0%</span>
+                          <span>50%</span>
+                        </div>
+                      </div>
+
+                      <div>
+                        <div className="flex justify-between items-center mb-2">
+                          <label className="text-sm font-medium text-gray-700">Score</label>
+                          <span className={`text-sm font-bold ${getScoreColor(criterion.score)}`}>
+                            {criterion.score} / 5
+                          </span>
+                        </div>
+                        <input
+                          type="range"
+                          min="1"
+                          max="5"
+                          value={criterion.score}
+                          onChange={(e) => updateScore(criterion.id, e.target.value)}
+                          className="w-full h-2 bg-gray-200 rounded-lg appearance-none cursor-pointer accent-green-600"
+                        />
+                        <div className="flex justify-between text-xs text-gray-500 mt-1">
+                          <span>1 (Poor)</span>
+                          <span>3 (Meets)</span>
+                          <span>5 (Excellent)</span>
+                        </div>
+                      </div>
+                    </div>
+
+                    <div className="mt-3 pt-3 border-t border-gray-200">
+                      <div className="flex justify-between text-sm mb-3">
+                        <span className="text-gray-600">Weighted Contribution:</span>
+                        <span className="font-semibold text-gray-800">
+                          {((criterion.score * criterion.weight) / totalWeight * 5).toFixed(2)} points
+                        </span>
+                      </div>
+                      
+                      <div>
+                        <label className="text-sm font-medium text-gray-700 block mb-2">
+                          Evaluation Comments
+                        </label>
+                        <textarea
+                          value={criterion.comment}
+                          onChange={(e) => updateComment(criterion.id, e.target.value)}
+                          placeholder="Add specific examples, feedback, or notes about this criterion..."
+                          className="w-full px-3 py-2 text-sm border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent resize-none"
+                          rows="3"
+                        />
+                        {criterion.comment && (
+                          <p className="text-xs text-gray-500 mt-1">
+                            {criterion.comment.length} characters
+                          </p>
+                        )}
+                      </div>
+                    </div>
+                  </div>
+                ))}
+              </div>
+
+              <div className="mt-6 bg-white rounded-lg shadow p-6">
+                <h3 className="font-semibold text-gray-800 mb-3">Scoring Guide</h3>
+                <div className="grid grid-cols-1 md:grid-cols-5 gap-3 text-sm">
+                  <div className="text-center p-3 bg-red-50 rounded">
+                    <p className="font-bold text-red-600">1 - Poor</p>
+                    <p className="text-xs text-gray-600 mt-1">Consistently fails to meet expectations</p>
+                  </div>
+                  <div className="text-center p-3 bg-orange-50 rounded">
+                    <p className="font-bold text-orange-600">2 - Below</p>
+                    <p className="text-xs text-gray-600 mt-1">Occasionally meets expectations</p>
+                  </div>
+                  <div className="text-center p-3 bg-blue-50 rounded">
+                    <p className="font-bold text-blue-600">3 - Meets</p>
+                    <p className="text-xs text-gray-600 mt-1">Consistently meets expectations</p>
+                  </div>
+                  <div className="text-center p-3 bg-green-50 rounded">
+                    <p className="font-bold text-green-600">4 - Exceeds</p>
+                    <p className="text-xs text-gray-600 mt-1">Frequently exceeds expectations</p>
+                  </div>
+                  <div className="text-center p-3 bg-emerald-50 rounded">
+                    <p className="font-bold text-emerald-600">5 - Outstanding</p>
+                    <p className="text-xs text-gray-600 mt-1">Consistently exceptional performance</p>
+                  </div>
+                </div>
+              </div>
+            </div>
+          );
+        };
+
+        ReactDOM.render(<DeveloperEvaluationScorer />, document.getElementById('root'));
+    </script>
+    
+    <style>
+        @media print {
+            body { background: white; }
+            .print\:hidden { display: none !important; }
+            input[type="range"] { pointer-events: none; }
+            textarea { border: 1px solid #d1d5db; }
+        }
+    </style>
+</body>
+</html>
