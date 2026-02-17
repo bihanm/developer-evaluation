@@ -120,9 +120,116 @@
             }
           ]);
 
+          const [teamworkCriteria, setTeamworkCriteria] = useState([
+            {
+              id: 1,
+              name: 'Agile Ceremony Participation',
+              description: 'Actively participates in sprint planning, stand-ups, reviews, and retrospectives in support of product goals',
+              weight: 20,
+              score: 3,
+              comment: ''
+            },
+            {
+              id: 2,
+              name: 'Effective Communication',
+              description: 'Communicates effectively with team members and non-technical stakeholders; maintains transparency in technical decisions',
+              weight: 20,
+              score: 3,
+              comment: ''
+            },
+            {
+              id: 3,
+              name: 'Feedback & Iteration',
+              description: 'Responds to feedback by updating requirements; provides constructive feedback during troubleshooting and code reviews',
+              weight: 15,
+              score: 3,
+              comment: ''
+            },
+            {
+              id: 4,
+              name: 'Documentation & Maintenance',
+              description: 'Creates and maintains product documentation (user guides, SOPs, architectural guidance) with stakeholder approval',
+              weight: 15,
+              score: 3,
+              comment: ''
+            },
+            {
+              id: 5,
+              name: 'Knowledge Sharing & FAIR Principles',
+              description: 'Shares knowledge, participates in cross-training, and applies FAIR principles to datasets and shared materials',
+              weight: 15,
+              score: 3,
+              comment: ''
+            },
+            {
+              id: 6,
+              name: 'Cross-Team Collaboration',
+              description: 'Collaborates with DevOps, Systems, and other teams to improve shared infrastructure and meet SLAs',
+              weight: 15,
+              score: 3,
+              comment: ''
+            }
+          ]);
+
+          const [professionalismCriteria, setProfessionalismCriteria] = useState([
+            {
+              id: 1,
+              name: 'Performance Review Participation',
+              description: 'Actively participates in performance reviews; shares information about work, highlights key outcomes and achievements',
+              weight: 25,
+              score: 3,
+              comment: ''
+            },
+            {
+              id: 2,
+              name: 'Individual Performance Planning',
+              description: 'Collaborates annually with supervisor to establish performance plans; provides written self-assessment by review date',
+              weight: 25,
+              score: 3,
+              comment: ''
+            },
+            {
+              id: 3,
+              name: 'Professional Development Goal Setting',
+              description: 'Meets with supervisor at least 3 times to review and discuss professional development goals aligned with product roadmaps and operational efficiency',
+              weight: 25,
+              score: 3,
+              comment: ''
+            },
+            {
+              id: 4,
+              name: 'Development Resource Planning',
+              description: 'Identifies training, mentorship, or resources needed to achieve professional development goals',
+              weight: 15,
+              score: 3,
+              comment: ''
+            },
+            {
+              id: 5,
+              name: 'Progress Monitoring & Accountability',
+              description: 'Monitors and tracks progress toward professional development goals; demonstrates accountability for growth',
+              weight: 10,
+              score: 3,
+              comment: ''
+            }
+          ]);
+
           const updateCriteria = (tab, id, field, value) => {
-            const setCriteria = tab === 'delivery' ? setDeliveryCriteria : setMasteryCriteria;
-            const criteria = tab === 'delivery' ? deliveryCriteria : masteryCriteria;
+            let setCriteria, criteria;
+            
+            if (tab === 'delivery') {
+              setCriteria = setDeliveryCriteria;
+              criteria = deliveryCriteria;
+            } else if (tab === 'mastery') {
+              setCriteria = setMasteryCriteria;
+              criteria = masteryCriteria;
+            } else if (tab === 'teamwork') {
+              setCriteria = setTeamworkCriteria;
+              criteria = teamworkCriteria;
+            } else {
+              setCriteria = setProfessionalismCriteria;
+              criteria = professionalismCriteria;
+            }
             
             setCriteria(criteria.map(c => 
               c.id === id ? { ...c, [field]: field === 'comment' ? value : parseInt(value) } : c
@@ -138,6 +245,8 @@
 
           const deliveryMetrics = calculateMetrics(deliveryCriteria);
           const masteryMetrics = calculateMetrics(masteryCriteria);
+          const teamworkMetrics = calculateMetrics(teamworkCriteria);
+          const professionalismMetrics = calculateMetrics(professionalismCriteria);
 
           const getScoreColor = (score) => {
             if (score >= 4) return 'text-green-600';
@@ -178,6 +287,28 @@
                   comment: c.comment,
                   weightedContribution: ((c.score * c.weight) / masteryMetrics.totalWeight * 5).toFixed(2)
                 }))
+              },
+              teamworkCommunication: {
+                overallScore: teamworkMetrics.averageScore,
+                performanceLevel: getPerformanceLabel(parseFloat(teamworkMetrics.averageScore)),
+                criteria: teamworkCriteria.map(c => ({
+                  name: c.name,
+                  weight: c.weight,
+                  score: c.score,
+                  comment: c.comment,
+                  weightedContribution: ((c.score * c.weight) / teamworkMetrics.totalWeight * 5).toFixed(2)
+                }))
+              },
+              professionalismAccountability: {
+                overallScore: professionalismMetrics.averageScore,
+                performanceLevel: getPerformanceLabel(parseFloat(professionalismMetrics.averageScore)),
+                criteria: professionalismCriteria.map(c => ({
+                  name: c.name,
+                  weight: c.weight,
+                  score: c.score,
+                  comment: c.comment,
+                  weightedContribution: ((c.score * c.weight) / professionalismMetrics.totalWeight * 5).toFixed(2)
+                }))
               }
             };
             
@@ -194,7 +325,11 @@
           };
 
           const renderCriteriaCards = (criteria, tab) => {
-            const metrics = tab === 'delivery' ? deliveryMetrics : masteryMetrics;
+            let metrics;
+            if (tab === 'delivery') metrics = deliveryMetrics;
+            else if (tab === 'mastery') metrics = masteryMetrics;
+            else if (tab === 'teamwork') metrics = teamworkMetrics;
+            else metrics = professionalismMetrics;
             
             return criteria.map((criterion) => (
               <div key={criterion.id} className="bg-white rounded-lg shadow p-5">
@@ -276,6 +411,30 @@
             ));
           };
 
+          const getCurrentMetrics = () => {
+            if (activeTab === 'delivery') return deliveryMetrics;
+            if (activeTab === 'mastery') return masteryMetrics;
+            if (activeTab === 'teamwork') return teamworkMetrics;
+            return professionalismMetrics;
+          };
+
+          const getCurrentCriteria = () => {
+            if (activeTab === 'delivery') return deliveryCriteria;
+            if (activeTab === 'mastery') return masteryCriteria;
+            if (activeTab === 'teamwork') return teamworkCriteria;
+            return professionalismCriteria;
+          };
+
+          const getTabTitle = () => {
+            if (activeTab === 'delivery') return 'Product Delivery';
+            if (activeTab === 'mastery') return 'Technical Mastery';
+            if (activeTab === 'teamwork') return 'Teamwork & Communication';
+            return 'Professionalism & Accountability';
+          };
+
+          const currentMetrics = getCurrentMetrics();
+          const currentCriteria = getCurrentCriteria();
+
           return (
             <div className="max-w-6xl mx-auto p-6 bg-gray-50">
               <div className="bg-white rounded-lg shadow-lg p-6 mb-6">
@@ -301,11 +460,11 @@
                 </div>
 
                 {/* Tabs */}
-                <div className="border-b border-gray-200 mb-6 print:hidden">
+                <div className="border-b border-gray-200 mb-6 print:hidden overflow-x-auto">
                   <nav className="flex -mb-px">
                     <button
                       onClick={() => setActiveTab('delivery')}
-                      className={`py-3 px-6 text-sm font-medium border-b-2 transition-colors ${
+                      className={`py-3 px-4 text-sm font-medium border-b-2 transition-colors whitespace-nowrap ${
                         activeTab === 'delivery'
                           ? 'border-blue-500 text-blue-600'
                           : 'border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300'
@@ -315,7 +474,7 @@
                     </button>
                     <button
                       onClick={() => setActiveTab('mastery')}
-                      className={`py-3 px-6 text-sm font-medium border-b-2 transition-colors ${
+                      className={`py-3 px-4 text-sm font-medium border-b-2 transition-colors whitespace-nowrap ${
                         activeTab === 'mastery'
                           ? 'border-blue-500 text-blue-600'
                           : 'border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300'
@@ -323,27 +482,65 @@
                     >
                       Technical Mastery
                     </button>
+                    <button
+                      onClick={() => setActiveTab('teamwork')}
+                      className={`py-3 px-4 text-sm font-medium border-b-2 transition-colors whitespace-nowrap ${
+                        activeTab === 'teamwork'
+                          ? 'border-blue-500 text-blue-600'
+                          : 'border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300'
+                      }`}
+                    >
+                      Teamwork & Communication
+                    </button>
+                    <button
+                      onClick={() => setActiveTab('professionalism')}
+                      className={`py-3 px-4 text-sm font-medium border-b-2 transition-colors whitespace-nowrap ${
+                        activeTab === 'professionalism'
+                          ? 'border-blue-500 text-blue-600'
+                          : 'border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300'
+                      }`}
+                    >
+                      Professionalism & Accountability
+                    </button>
                   </nav>
                 </div>
 
                 {/* Overall Scores Summary */}
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-6">
-                  <div className={`bg-gradient-to-br from-blue-50 to-blue-100 border-l-4 border-blue-500 p-4 rounded-lg ${activeTab === 'delivery' ? 'ring-2 ring-blue-500' : ''}`}>
-                    <p className="text-xs text-gray-600 mb-1">Product Delivery Score</p>
-                    <p className={`text-3xl font-bold ${getScoreColor(parseFloat(deliveryMetrics.averageScore))}`}>
-                      {deliveryMetrics.averageScore} / 5.0
+                <div className="grid grid-cols-2 md:grid-cols-4 gap-3 mb-6">
+                  <div className={`bg-gradient-to-br from-blue-50 to-blue-100 border-l-4 border-blue-500 p-3 rounded-lg ${activeTab === 'delivery' ? 'ring-2 ring-blue-500' : ''}`}>
+                    <p className="text-xs text-gray-600 mb-1">Product Delivery</p>
+                    <p className={`text-2xl font-bold ${getScoreColor(parseFloat(deliveryMetrics.averageScore))}`}>
+                      {deliveryMetrics.averageScore}
                     </p>
                     <p className="text-xs font-medium text-gray-700 mt-1">
                       {getPerformanceLabel(parseFloat(deliveryMetrics.averageScore))}
                     </p>
                   </div>
-                  <div className={`bg-gradient-to-br from-purple-50 to-purple-100 border-l-4 border-purple-500 p-4 rounded-lg ${activeTab === 'mastery' ? 'ring-2 ring-purple-500' : ''}`}>
-                    <p className="text-xs text-gray-600 mb-1">Technical Mastery Score</p>
-                    <p className={`text-3xl font-bold ${getScoreColor(parseFloat(masteryMetrics.averageScore))}`}>
-                      {masteryMetrics.averageScore} / 5.0
+                  <div className={`bg-gradient-to-br from-purple-50 to-purple-100 border-l-4 border-purple-500 p-3 rounded-lg ${activeTab === 'mastery' ? 'ring-2 ring-purple-500' : ''}`}>
+                    <p className="text-xs text-gray-600 mb-1">Technical Mastery</p>
+                    <p className={`text-2xl font-bold ${getScoreColor(parseFloat(masteryMetrics.averageScore))}`}>
+                      {masteryMetrics.averageScore}
                     </p>
                     <p className="text-xs font-medium text-gray-700 mt-1">
                       {getPerformanceLabel(parseFloat(masteryMetrics.averageScore))}
+                    </p>
+                  </div>
+                  <div className={`bg-gradient-to-br from-green-50 to-green-100 border-l-4 border-green-500 p-3 rounded-lg ${activeTab === 'teamwork' ? 'ring-2 ring-green-500' : ''}`}>
+                    <p className="text-xs text-gray-600 mb-1">Teamwork & Comm.</p>
+                    <p className={`text-2xl font-bold ${getScoreColor(parseFloat(teamworkMetrics.averageScore))}`}>
+                      {teamworkMetrics.averageScore}
+                    </p>
+                    <p className="text-xs font-medium text-gray-700 mt-1">
+                      {getPerformanceLabel(parseFloat(teamworkMetrics.averageScore))}
+                    </p>
+                  </div>
+                  <div className={`bg-gradient-to-br from-orange-50 to-orange-100 border-l-4 border-orange-500 p-3 rounded-lg ${activeTab === 'professionalism' ? 'ring-2 ring-orange-500' : ''}`}>
+                    <p className="text-xs text-gray-600 mb-1">Professionalism</p>
+                    <p className={`text-2xl font-bold ${getScoreColor(parseFloat(professionalismMetrics.averageScore))}`}>
+                      {professionalismMetrics.averageScore}
+                    </p>
+                    <p className="text-xs font-medium text-gray-700 mt-1">
+                      {getPerformanceLabel(parseFloat(professionalismMetrics.averageScore))}
                     </p>
                   </div>
                 </div>
@@ -353,25 +550,21 @@
                   <div className="flex items-center justify-between">
                     <div>
                       <p className="text-sm text-gray-600 mb-1">
-                        {activeTab === 'delivery' ? 'Product Delivery' : 'Technical Mastery'} Performance Score
+                        {getTabTitle()} Performance Score
                       </p>
-                      <p className={`text-4xl font-bold ${getScoreColor(parseFloat(activeTab === 'delivery' ? deliveryMetrics.averageScore : masteryMetrics.averageScore))}`}>
-                        {activeTab === 'delivery' ? deliveryMetrics.averageScore : masteryMetrics.averageScore} / 5.0
+                      <p className={`text-4xl font-bold ${getScoreColor(parseFloat(currentMetrics.averageScore))}`}>
+                        {currentMetrics.averageScore} / 5.0
                       </p>
                       <p className="text-sm font-medium text-gray-700 mt-1">
-                        {getPerformanceLabel(parseFloat(activeTab === 'delivery' ? deliveryMetrics.averageScore : masteryMetrics.averageScore))}
+                        {getPerformanceLabel(parseFloat(currentMetrics.averageScore))}
                       </p>
                     </div>
                     <div className="text-right">
                       <p className="text-sm text-gray-600">Total Weight</p>
-                      <p className={`text-2xl font-bold ${
-                        (activeTab === 'delivery' ? deliveryMetrics.totalWeight : masteryMetrics.totalWeight) === 100 
-                          ? 'text-green-600' 
-                          : 'text-orange-600'
-                      }`}>
-                        {activeTab === 'delivery' ? deliveryMetrics.totalWeight : masteryMetrics.totalWeight}%
+                      <p className={`text-2xl font-bold ${currentMetrics.totalWeight === 100 ? 'text-green-600' : 'text-orange-600'}`}>
+                        {currentMetrics.totalWeight}%
                       </p>
-                      {(activeTab === 'delivery' ? deliveryMetrics.totalWeight : masteryMetrics.totalWeight) !== 100 && (
+                      {currentMetrics.totalWeight !== 100 && (
                         <p className="text-xs text-orange-600 mt-1">Should total 100%</p>
                       )}
                     </div>
@@ -381,10 +574,7 @@
 
               {/* Criteria Cards */}
               <div className="space-y-4">
-                {activeTab === 'delivery' 
-                  ? renderCriteriaCards(deliveryCriteria, 'delivery')
-                  : renderCriteriaCards(masteryCriteria, 'mastery')
-                }
+                {renderCriteriaCards(currentCriteria, activeTab)}
               </div>
 
               {/* Scoring Guide */}
